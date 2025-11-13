@@ -28,6 +28,9 @@ const VolunteerRegister = () => {
     tshirtSize: "",
     emergencyName: "",
     emergencyPhone: "",
+    secondaryContactName: "",
+    secondaryContactPhone: "",
+    secondaryContactRelationship: "",
     availableDates: [],
     volunteerAgreement: false,
     signature: "",
@@ -285,6 +288,24 @@ const VolunteerRegister = () => {
               value={formData.emergencyPhone}
               onChange={handleChange}
               required
+            />
+            <Input
+              label="Secondary Contact Name"
+              name="secondaryContactName"
+              value={formData.secondaryContactName}
+              onChange={handleChange}
+            />
+            <Input
+              label="Secondary Contact Phone"
+              name="secondaryContactPhone"
+              value={formData.secondaryContactPhone}
+              onChange={handleChange}
+            />
+            <Input
+              label="Secondary Contact Relationship"
+              name="secondaryContactRelationship"
+              value={formData.secondaryContactRelationship}
+              onChange={handleChange}
             />
           </Card>
 
