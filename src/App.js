@@ -28,7 +28,7 @@ import VolunteerRegister from "./pages/VolunteerRegister";
 import VolunteerIDCard from "./pages/VolunteerIDCard";
 
 // ===================== Utility / Scanner =====================
-import AttendanceScanner from "./pages/AttendanceScanner";
+// import AttendanceScanner from "./pages/AttendanceScanner";
 
 function App() {
   return (
@@ -42,7 +42,7 @@ function App() {
         <Route path="/id-card" element={<IDCard />} />
         <Route path="/volunteer-register" element={<VolunteerRegister />} />
         <Route path="/volunteer-id" element={<VolunteerIDCard />} />
-        <Route path="/attendance-scanner" element={<AttendanceScanner />} />
+  {/* <Route path="/attendance-scanner" element={<AttendanceScanner />} /> */}
         <Route path="/preview" element={<Preview />} />
 
 
