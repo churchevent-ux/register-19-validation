@@ -39,7 +39,7 @@ const Preview = () => {
   };
 
   /** Map Participant Data **/
-  const mapParticipantData = (p) => {
+  const mapParticipantData = React.useCallback((p) => {
     const age = p.age ?? (p.dob ? calculateAge(p.dob) : null);
     const { label, code } = getCategory(age);
     const medConds = Array.isArray(p.medicalConditions)
@@ -62,7 +62,7 @@ const Preview = () => {
       medicalConditions: medConds,
       additionalMedicalNotes: p.additionalMedicalNotes || "",
     };
-  };
+  }, [calculateAge, getCategory]);
 
   /** Load Participants **/
   useEffect(() => {

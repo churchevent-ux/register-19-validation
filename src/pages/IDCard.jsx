@@ -29,12 +29,12 @@ const IDCard = () => {
   };
 
   // Helper: get category code based on age or dob
-  const getCategoryCode = (age, dob) => {
+  const getCategoryCode = React.useCallback((age, dob) => {
     if (!age && dob) age = calculateAge(dob);
     if (age >= 8 && age <= 12) return "DGK";
     if (age >= 13 && age <= 18) return "DGT";
     return "N/A";
-  };
+  }, [calculateAge]);
 
   // Utility: capitalize names
   const capitalizeName = (name) =>

@@ -75,7 +75,7 @@ const BreakPage = () => {
     // Sort: ongoing breaks on top
     arr.sort((a, b) => (!a.breakOut && b.breakOut ? -1 : a.breakOut && !b.breakOut ? 1 : 0));
     return arr;
-  }, [breakData, selectedDate, searchQuery]);
+  }, [selectedDate, searchQuery]);
 
   // Notifications for >1 hour break
   useEffect(() => {
