@@ -51,7 +51,7 @@ const IDCard = () => {
 
     const allParticipants = [state.formData, ...(state.siblings || [])].map((p) => ({
       ...p,
-      familyId: p.familyId || `STU-${Math.floor(10000 + Math.random() * 90000)}`,
+      familyId: p.uniqueId || p.familyId || p.studentId || p.id,
       category: p.category || getCategoryCode(p.age, p.dob),
     }));
 

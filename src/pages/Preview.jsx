@@ -24,10 +24,9 @@ const Preview = () => {
   }, []);
 
   const getCategory = React.useCallback((age) => {
-    if (age < 8) return { label: "Under 8", code: "UND" };
-    if (age <= 12) return { label: "Kids", code: "DGK" };
-    if (age <= 20) return { label: "Teen", code: "DGT" };
-    return { label: "Over 20", code: "OVR" };
+    if (age >= 8 && age <= 12) return { label: "Kids", code: "DGK" };
+    if (age >= 13 && age <= 18) return { label: "Teen", code: "DGT" };
+    return { label: "Other", code: "DGX" };
   }, []);
 
   const getCardBackground = (categoryLabel) => {
