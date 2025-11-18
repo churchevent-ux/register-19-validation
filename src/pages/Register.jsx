@@ -311,13 +311,15 @@ const handleSubmit = async (e) => {
         const allDocsSnapshot = await getDocs(usersRef);
         let maxNumber = 0;
         
-        // Find the highest number for this prefix
+        // Find the highest number for this prefix - check ALL possible ID fields
+        const usedIds = new Set();
         allDocsSnapshot.forEach((docSnap) => {
           const docId = docSnap.id;
           const data = docSnap.data();
           
           // Check document ID
           if (docId.startsWith(prefix + "-")) {
+            usedIds.add(docId);
             const numberPart = docId.split("-")[1];
             const num = parseInt(numberPart) || 0;
             if (num > maxNumber) maxNumber = num;
@@ -325,7 +327,24 @@ const handleSubmit = async (e) => {
           
           // Check uniqueId field
           if (data.uniqueId && data.uniqueId.startsWith(prefix + "-")) {
+            usedIds.add(data.uniqueId);
             const numberPart = data.uniqueId.split("-")[1];
+            const num = parseInt(numberPart) || 0;
+            if (num > maxNumber) maxNumber = num;
+          }
+          
+          // Check studentId field (legacy)
+          if (data.studentId && data.studentId.startsWith(prefix + "-")) {
+            usedIds.add(data.studentId);
+            const numberPart = data.studentId.split("-")[1];
+            const num = parseInt(numberPart) || 0;
+            if (num > maxNumber) maxNumber = num;
+          }
+          
+          // Check familyId field (legacy)
+          if (data.familyId && data.familyId.startsWith(prefix + "-")) {
+            usedIds.add(data.familyId);
+            const numberPart = data.familyId.split("-")[1];
             const num = parseInt(numberPart) || 0;
             if (num > maxNumber) maxNumber = num;
           }
@@ -335,7 +354,14 @@ const handleSubmit = async (e) => {
         const nextNumber = maxNumber + 1 + attempts; // Add attempts to avoid collisions
         const candidateId = `${prefix}-${String(nextNumber).padStart(3, "0")}`;
         
-        // Double check this ID doesn't exist
+        // Check if this ID is already in use in the Set
+        if (usedIds.has(candidateId)) {
+          attempts++;
+          await new Promise(resolve => setTimeout(resolve, 50 * (attempts + 1)));
+          continue;
+        }
+        
+        // Double check this ID doesn't exist as document ID
         const docRef = doc(usersRef, candidateId);
         const docSnap = await getDoc(docRef);
         
@@ -351,12 +377,20 @@ const handleSubmit = async (e) => {
             registrationDevice: navigator.userAgent,
           };
           
-          await setDoc(docRef, participantWithId);
-          savedParticipants.push(participantWithId);
+          console.log("Saving participant with ID:", uniqueId, participantWithId);
           
-          // Add small delay to ensure write is committed
-          await new Promise(resolve => setTimeout(resolve, 100));
-          break;
+          try {
+            await setDoc(docRef, participantWithId);
+            console.log("Successfully saved:", uniqueId);
+            savedParticipants.push(participantWithId);
+            
+            // Add small delay to ensure write is committed
+            await new Promise(resolve => setTimeout(resolve, 100));
+            break;
+          } catch (saveError) {
+            console.error("Error saving participant:", saveError);
+            throw saveError;
+          }
         }
         
         attempts++;
@@ -372,9 +406,11 @@ const handleSubmit = async (e) => {
       }
     }
     
+    console.log("All participants saved:", savedParticipants.length);
     setLoading(false);
     navigate("/preview", { state: { participants: savedParticipants } });
   } catch (err) {
+    console.error("Registration error:", err);
     setLoading(false);
     alert("Failed to save registration: " + err.message);
   }
