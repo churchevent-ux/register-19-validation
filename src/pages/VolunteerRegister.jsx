@@ -94,69 +94,82 @@ const VolunteerRegister = () => {
     e.preventDefault();
     try {
       const volRef = collection(db, "volunteers");
-      
-      // Fetch ALL documents to find the highest DGV ID
-      const allDocsSnapshot = await getDocs(volRef);
-      
-      let maxNumber = 0;
       const prefix = "DGV";
       
-      allDocsSnapshot.forEach((docSnap) => {
-        const docId = docSnap.id;
-        const data = docSnap.data();
-        
-        // Check if document ID matches the pattern
-        if (docId.startsWith(prefix + "-")) {
-          const numberPart = docId.split("-")[1];
-          const num = parseInt(numberPart) || 0;
-          if (num > maxNumber) maxNumber = num;
-        }
-        
-        // Also check volunteerId field if it exists
-        if (data.volunteerId && data.volunteerId.startsWith(prefix + "-")) {
-          const numberPart = data.volunteerId.split("-")[1];
-          const num = parseInt(numberPart) || 0;
-          if (num > maxNumber) maxNumber = num;
-        }
-      });
-
-      // Generate new unique ID with DGV prefix (DGV = Don Bosco Guwahati Volunteer)
-      let newNumber = maxNumber + 1;
-      let volunteerId = `DGV-${String(newNumber).padStart(3, "0")}`;
-      
-      // Safety check: Ensure ID doesn't already exist (retry up to 20 times)
+      let volunteerId = null;
       let attempts = 0;
-      while (attempts < 20) {
-        const docRef = doc(volRef, volunteerId);
+      const maxAttempts = 50; // Increased for high concurrency
+      
+      // Keep trying until we find an available ID
+      while (attempts < maxAttempts && !volunteerId) {
+        // Fetch ALL documents each time to get the absolute latest state
+        const allDocsSnapshot = await getDocs(volRef);
+        let maxNumber = 0;
+        
+        // Find the highest number for DGV prefix
+        allDocsSnapshot.forEach((docSnap) => {
+          const docId = docSnap.id;
+          const data = docSnap.data();
+          
+          // Check document ID
+          if (docId.startsWith(prefix + "-")) {
+            const numberPart = docId.split("-")[1];
+            const num = parseInt(numberPart) || 0;
+            if (num > maxNumber) maxNumber = num;
+          }
+          
+          // Check volunteerId field
+          if (data.volunteerId && data.volunteerId.startsWith(prefix + "-")) {
+            const numberPart = data.volunteerId.split("-")[1];
+            const num = parseInt(numberPart) || 0;
+            if (num > maxNumber) maxNumber = num;
+          }
+        });
+        
+        // Try the next available number
+        const nextNumber = maxNumber + 1 + attempts; // Add attempts to avoid collisions
+        const candidateId = `${prefix}-${String(nextNumber).padStart(3, "0")}`;
+        
+        // Double check this ID doesn't exist
+        const docRef = doc(volRef, candidateId);
         const docSnap = await getDoc(docRef);
         
         if (!docSnap.exists()) {
-          // ID is available, we can use it
-          break;
-        } else {
-          // ID already exists, increment and try again
-          newNumber++;
-          volunteerId = `DGV-${String(newNumber).padStart(3, "0")}`;
-          attempts++;
-        }
-      }
-      
-      if (attempts >= 20) {
-        throw new Error("Could not generate unique volunteer ID after 20 attempts. Please contact support.");
-      }
-      
-      const dataToSave = { 
-        ...formData, 
-        volunteerId: volunteerId, 
-        createdAt: new Date() 
-      };
+          // SUCCESS! This ID is available
+          volunteerId = candidateId;
+          
+          // Immediately save to claim this ID
+          const dataToSave = { 
+            ...formData, 
+            volunteerId: volunteerId, 
+            createdAt: new Date(),
+            registrationTimestamp: new Date(),
+            registrationDevice: navigator.userAgent
+          };
 
-      // Use the unique ID as the document ID
-      await setDoc(doc(volRef, volunteerId), dataToSave);
-      navigate("/volunteer-id", { state: { formData: dataToSave } });
+          await setDoc(docRef, dataToSave);
+          
+          // Add small delay to ensure write is committed
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          navigate("/volunteer-id", { state: { formData: dataToSave } });
+          break;
+        }
+        
+        attempts++;
+        // Add exponential backoff for retries
+        await new Promise(resolve => setTimeout(resolve, 50 * (attempts + 1)));
+      }
+      
+      if (!volunteerId) {
+        throw new Error(
+          `Failed to generate unique volunteer ID after ${maxAttempts} attempts. ` +
+          `This might be due to high registration traffic. Please try again in a moment.`
+        );
+      }
     } catch (err) {
       console.error("Error adding volunteer:", err);
-      alert("Failed to register. Check console for details.");
+      alert("Failed to register: " + err.message);
     }
   };
 

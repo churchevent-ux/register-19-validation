@@ -288,58 +288,10 @@ const handleSubmit = async (e) => {
 
   try {
     const usersRef = collection(db, "users");
-    
-    // Initialize counters for each category by fetching ALL existing IDs
-    const categoryCounters = {};
-    
-    // Get unique categories from all participants
-    const categories = [...new Set(allParticipants.map(p => p.category))];
-    
-    // Fetch ALL documents to find the highest ID for each category
-    const allDocsSnapshot = await getDocs(usersRef);
-    
-    for (const category of categories) {
-      let prefix = "";
-      if (category === "Kids") {
-        prefix = "DGK";
-      } else if (category === "Teen") {
-        prefix = "DGT";
-      } else {
-        prefix = "DGX";
-      }
-      
-      let maxNumber = 0;
-      
-      // Check both document IDs and uniqueId fields
-      allDocsSnapshot.forEach((docSnap) => {
-        const docId = docSnap.id;
-        const data = docSnap.data();
-        
-        // Check if document ID matches the pattern
-        if (docId.startsWith(prefix + "-")) {
-          const numberPart = docId.split("-")[1];
-          const num = parseInt(numberPart) || 0;
-          if (num > maxNumber) maxNumber = num;
-        }
-        
-        // Also check uniqueId field if it exists
-        if (data.uniqueId && data.uniqueId.startsWith(prefix + "-")) {
-          const numberPart = data.uniqueId.split("-")[1];
-          const num = parseInt(numberPart) || 0;
-          if (num > maxNumber) maxNumber = num;
-        }
-      });
-      
-      categoryCounters[category] = maxNumber;
-    }
-    
-    // Save all participants with unique IDs
     const savedParticipants = [];
+    
+    // Process each participant individually with full collision detection
     for (const participant of allParticipants) {
-      // Increment counter for this category
-      categoryCounters[participant.category] = (categoryCounters[participant.category] || 0) + 1;
-      
-      // Generate unique ID
       let prefix = "";
       if (participant.category === "Kids") {
         prefix = "DGK";
@@ -349,39 +301,75 @@ const handleSubmit = async (e) => {
         prefix = "DGX";
       }
       
-      let uniqueId = `${prefix}-${String(categoryCounters[participant.category]).padStart(3, "0")}`;
-      
-      // Safety check: Ensure ID doesn't already exist (retry up to 20 times)
+      let uniqueId = null;
       let attempts = 0;
-      while (attempts < 20) {
-        const docRef = doc(usersRef, uniqueId);
+      const maxAttempts = 50; // Increased for high concurrency
+      
+      // Keep trying until we find an available ID
+      while (attempts < maxAttempts && !uniqueId) {
+        // Fetch ALL documents each time to get the absolute latest state
+        const allDocsSnapshot = await getDocs(usersRef);
+        let maxNumber = 0;
+        
+        // Find the highest number for this prefix
+        allDocsSnapshot.forEach((docSnap) => {
+          const docId = docSnap.id;
+          const data = docSnap.data();
+          
+          // Check document ID
+          if (docId.startsWith(prefix + "-")) {
+            const numberPart = docId.split("-")[1];
+            const num = parseInt(numberPart) || 0;
+            if (num > maxNumber) maxNumber = num;
+          }
+          
+          // Check uniqueId field
+          if (data.uniqueId && data.uniqueId.startsWith(prefix + "-")) {
+            const numberPart = data.uniqueId.split("-")[1];
+            const num = parseInt(numberPart) || 0;
+            if (num > maxNumber) maxNumber = num;
+          }
+        });
+        
+        // Try the next available number
+        const nextNumber = maxNumber + 1 + attempts; // Add attempts to avoid collisions
+        const candidateId = `${prefix}-${String(nextNumber).padStart(3, "0")}`;
+        
+        // Double check this ID doesn't exist
+        const docRef = doc(usersRef, candidateId);
         const docSnap = await getDoc(docRef);
         
         if (!docSnap.exists()) {
-          // ID is available, we can use it
+          // SUCCESS! This ID is available
+          uniqueId = candidateId;
+          
+          // Immediately save to claim this ID
+          const participantWithId = {
+            ...participant,
+            uniqueId: uniqueId,
+            registrationTimestamp: serverTimestamp(),
+            registrationDevice: navigator.userAgent,
+          };
+          
+          await setDoc(docRef, participantWithId);
+          savedParticipants.push(participantWithId);
+          
+          // Add small delay to ensure write is committed
+          await new Promise(resolve => setTimeout(resolve, 100));
           break;
-        } else {
-          // ID already exists, increment and try again
-          categoryCounters[participant.category]++;
-          uniqueId = `${prefix}-${String(categoryCounters[participant.category]).padStart(3, "0")}`;
-          attempts++;
         }
+        
+        attempts++;
+        // Add exponential backoff for retries
+        await new Promise(resolve => setTimeout(resolve, 50 * (attempts + 1)));
       }
       
-      if (attempts >= 20) {
-        throw new Error(`Could not generate unique ID for ${participant.participantName} after 20 attempts. Please contact support.`);
+      if (!uniqueId) {
+        throw new Error(
+          `Failed to generate unique ID for ${participant.participantName} after ${maxAttempts} attempts. ` +
+          `This might be due to high registration traffic. Please try again in a moment.`
+        );
       }
-      
-      // Add uniqueId to participant data
-      const participantWithId = {
-        ...participant,
-        uniqueId: uniqueId,
-      };
-      
-      savedParticipants.push(participantWithId);
-      
-      // Use setDoc with the unique ID as document ID
-      await setDoc(doc(usersRef, uniqueId), participantWithId);
     }
     
     setLoading(false);
