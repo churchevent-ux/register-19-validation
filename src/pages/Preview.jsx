@@ -147,11 +147,10 @@ const Preview = () => {
     setLoading(true);
     try {
       // Data is already saved in Register.jsx with uniqueId
-      // Just navigate to ID card with the existing data
+      // Each participant is saved individually with their own unique ID
       const savedDocs = participants.map(p => ({
         ...p,
         studentId: p.uniqueId || p.studentId, // Use uniqueId as studentId for display
-        familyId: p.uniqueId || p.studentId,
         docId: p.uniqueId || p.id
       }));
 

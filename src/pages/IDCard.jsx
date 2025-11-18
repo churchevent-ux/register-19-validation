@@ -50,11 +50,11 @@ const IDCard = () => {
     if (!state?.formData) return navigate("/register");
 
     const allParticipants = [state.formData, ...(state.siblings || [])].map((p) => {
-      const displayId = p.uniqueId || p.familyId || p.studentId || p.id;
+      const displayId = p.uniqueId || p.studentId || p.id;
       console.log("Participant ID:", displayId, "Data:", p); // Debug log
       return {
         ...p,
-        familyId: displayId,
+        displayId: displayId,
         category: p.category || p.categoryLabel || getCategoryCode(p.age, p.dob),
       };
     });
@@ -65,9 +65,9 @@ const IDCard = () => {
   // Generate barcode for each participant
   useEffect(() => {
     participants.forEach((p) => {
-      const svgEl = barcodeRefs.current[p.familyId];
+      const svgEl = barcodeRefs.current[p.displayId];
       if (svgEl) {
-        JsBarcode(svgEl, p.familyId, {
+        JsBarcode(svgEl, p.displayId, {
           format: "CODE128",
           displayValue: true,
           height: 50,
@@ -95,7 +95,7 @@ const IDCard = () => {
           const ref = doc(db, "users", p.docId);
           await updateDoc(ref, {
             idGenerated: true,
-            generatedId: p.familyId,
+            generatedId: p.displayId,
             generatedAt: new Date(),
           });
         }
@@ -108,7 +108,7 @@ const IDCard = () => {
 
   // Share IDs on WhatsApp
   const handleShareWhatsApp = () => {
-    const ids = participants.map((p) => `${capitalizeName(p.participantName)}: ${p.familyId}`).join("\n");
+    const ids = participants.map((p) => `${capitalizeName(p.participantName)}: ${p.displayId}`).join("\n");
     const message = `My registration IDs for Deo Gratias 2025 Teens & Kids Retreat:\n${ids}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`);
   };
@@ -140,10 +140,10 @@ const IDCard = () => {
             Category: {main.category} | Medical: {main.medicalConditions || "N/A"}
           </p>
           <div style={{ textAlign: "center", margin: "10px 0" }}>
-            <h2 style={{ fontSize: "28px", color: "#6c3483", margin: "5px 0" }}>{main.familyId}</h2>
+            <h2 style={{ fontSize: "28px", color: "#6c3483", margin: "5px 0" }}>{main.displayId}</h2>
           </div>
           <div style={styles.barcodeWrapper}>
-            <svg ref={(el) => (barcodeRefs.current[main.familyId] = el)}></svg>
+            <svg ref={(el) => (barcodeRefs.current[main.displayId] = el)}></svg>
           </div>
         </div>
 
@@ -158,15 +158,15 @@ const IDCard = () => {
                 </p>
                 <div style={{ textAlign: "center", margin: "5px 0" }}>
                   <h3 style={{ fontSize: "22px", color: "#6c3483", margin: "5px 0" }}>
-                    ID: {sib.familyId}
+                    ID: {sib.displayId}
                   </h3>
                 </div>
                 <p style={styles.siblingDetail}>
                   Category: {sib.category} | Medical: {sib.medicalConditions || "N/A"}
                 </p>
-                {sib.familyId && (
+                {sib.displayId && (
                   <div style={styles.barcodeWrapper}>
-                    <svg ref={(el) => (barcodeRefs.current[sib.familyId] = el)}></svg>
+                    <svg ref={(el) => (barcodeRefs.current[sib.displayId] = el)}></svg>
                   </div>
                 )}
               </div>
