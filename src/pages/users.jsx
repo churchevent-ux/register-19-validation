@@ -68,12 +68,13 @@ const Users = () => {
       (filter === "offline" && !user.inSession);
     const matchesSearch =
       user.participantName?.toLowerCase().includes(search.toLowerCase()) ||
+      user.uniqueId?.toString().includes(search) ||
       user.studentId?.toString().includes(search);
     return matchesFilter && matchesSearch;
   });
 
   const handleBulkPrint = async () => {
-    const selected = users.filter((u) => selectedUsers.includes(u.id) && u.studentId);
+    const selected = users.filter((u) => selectedUsers.includes(u.id) && (u.uniqueId || u.studentId));
     if (!selected.length) return alert("Please select at least one user with a valid ID");
 
     try {
@@ -92,7 +93,7 @@ const Users = () => {
 
         card.innerHTML = `
           <h3 style="margin:5px;color:#6c3483">${capitalizeName(user.participantName)}</h3>
-          <p style="margin:5px;font-weight:bold">ID: ${user.studentId}</p>
+          <p style="margin:5px;font-weight:bold">ID: ${user.uniqueId || user.studentId}</p>
           <div id="qr-${user.id}"></div>
         `;
 

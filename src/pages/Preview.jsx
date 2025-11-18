@@ -145,29 +145,19 @@ const Preview = () => {
 
     setLoading(true);
     try {
-      const usersRef = collection(db, "users");
-      const savedDocs = [];
-      const q = query(usersRef, orderBy("createdAt", "desc"), limit(1));
-      const snap = await getDocs(q);
-      let lastNumber = 0;
-      snap.forEach((doc) => {
-        const lastId = doc.data()?.studentId;
-        const num = lastId ? parseInt(lastId.replace(/\D/g, "")) : 0;
-        if (!isNaN(num)) lastNumber = num;
-      });
-
-      for (let p of participants) {
-        lastNumber++;
-        const studentId = `${p.categoryCode}-${String(lastNumber).padStart(3, "0")}`;
-        const data = { ...p, studentId, familyId: studentId, createdAt: serverTimestamp() };
-        const docRef = await addDoc(usersRef, data);
-        savedDocs.push({ ...data, docId: docRef.id });
-      }
+      // Data is already saved in Register.jsx with uniqueId
+      // Just navigate to ID card with the existing data
+      const savedDocs = participants.map(p => ({
+        ...p,
+        studentId: p.uniqueId || p.studentId, // Use uniqueId as studentId for display
+        familyId: p.uniqueId || p.studentId,
+        docId: p.uniqueId || p.id
+      }));
 
       navigate("/id-card", { state: { formData: savedDocs[0], siblings: savedDocs.slice(1) } });
     } catch (err) {
       console.error(err);
-      alert(`❌ Submission failed: ${err.message}`);
+      alert(`❌ Navigation failed: ${err.message}`);
     } finally {
       setLoading(false);
     }

@@ -100,7 +100,7 @@ const UserDetails = () => {
               </tr>
               <tr>
                 <td style={styles.tableLabel}>ID</td>
-                <td style={styles.tableValue}>{user.studentId || user.id}</td>
+                <td style={styles.tableValue}>{user.uniqueId || user.studentId || user.id}</td>
               </tr>
               <tr>
                 <td style={styles.tableLabel}>Email</td>
@@ -140,10 +140,10 @@ const UserDetails = () => {
             <h2 style={{ ...styles.name, fontStyle: user.medicalConditions?.length ? "italic" : "normal" }}>
               {user.participantName || user.name}
             </h2>
-            <p style={styles.idText}>{user.studentId || user.id}</p>
+            <p style={styles.idText}>{user.uniqueId || user.studentId || user.id}</p>
 
             <div style={styles.qrWrapper}>
-              <QRCodeCanvas value={user.studentId || user.id} size={150} />
+              <QRCodeCanvas value={user.uniqueId || user.studentId || user.id} size={150} />
             </div>
             {/* <p style={styles.addressText}>{user.residence || user.address}</p> */}
           </div>
