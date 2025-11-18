@@ -135,6 +135,9 @@ const IDCard = () => {
           <p style={styles.siblingDetail}>
             Category: {main.category} | Medical: {main.medicalConditions || "N/A"}
           </p>
+          <div style={{ textAlign: "center", margin: "10px 0" }}>
+            <h2 style={{ fontSize: "28px", color: "#6c3483", margin: "5px 0" }}>{main.familyId}</h2>
+          </div>
           <div style={styles.barcodeWrapper}>
             <svg ref={(el) => (barcodeRefs.current[main.familyId] = el)}></svg>
           </div>
@@ -149,9 +152,11 @@ const IDCard = () => {
                 <p style={styles.siblingName}>
                   👧 {capitalizeName(sib.participantName)} ({sib.age || "N/A"} yrs)
                 </p>
-                <p style={styles.id}>
-                  <strong>ID: {sib.familyId}</strong>
-                </p>
+                <div style={{ textAlign: "center", margin: "5px 0" }}>
+                  <h3 style={{ fontSize: "22px", color: "#6c3483", margin: "5px 0" }}>
+                    ID: {sib.familyId}
+                  </h3>
+                </div>
                 <p style={styles.siblingDetail}>
                   Category: {sib.category} | Medical: {sib.medicalConditions || "N/A"}
                 </p>
