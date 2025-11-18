@@ -289,13 +289,15 @@ const handleSubmit = async (e) => {
   try {
     const usersRef = collection(db, "users");
     
-    // Initialize counters for each category by fetching the last IDs
+    // Initialize counters for each category by fetching ALL existing IDs
     const categoryCounters = {};
     
     // Get unique categories from all participants
     const categories = [...new Set(allParticipants.map(p => p.category))];
     
-    // Fetch last ID for each category
+    // Fetch ALL documents to find the highest ID for each category
+    const allDocsSnapshot = await getDocs(usersRef);
+    
     for (const category of categories) {
       let prefix = "";
       if (category === "Kids") {
@@ -306,26 +308,29 @@ const handleSubmit = async (e) => {
         prefix = "DGX";
       }
       
-      const q = query(
-        usersRef,
-        where("uniqueId", ">=", `${prefix}-000`),
-        where("uniqueId", "<", `${prefix}-999999`),
-        orderBy("uniqueId", "desc"),
-        limit(1)
-      );
+      let maxNumber = 0;
       
-      const snapshot = await getDocs(q);
-      let lastNumber = 0;
-      
-      snapshot.forEach((doc) => {
-        const lastId = doc.data().uniqueId;
-        if (lastId) {
-          const numberPart = lastId.split("-")[1];
-          lastNumber = parseInt(numberPart) || 0;
+      // Check both document IDs and uniqueId fields
+      allDocsSnapshot.forEach((docSnap) => {
+        const docId = docSnap.id;
+        const data = docSnap.data();
+        
+        // Check if document ID matches the pattern
+        if (docId.startsWith(prefix + "-")) {
+          const numberPart = docId.split("-")[1];
+          const num = parseInt(numberPart) || 0;
+          if (num > maxNumber) maxNumber = num;
+        }
+        
+        // Also check uniqueId field if it exists
+        if (data.uniqueId && data.uniqueId.startsWith(prefix + "-")) {
+          const numberPart = data.uniqueId.split("-")[1];
+          const num = parseInt(numberPart) || 0;
+          if (num > maxNumber) maxNumber = num;
         }
       });
       
-      categoryCounters[category] = lastNumber;
+      categoryCounters[category] = maxNumber;
     }
     
     // Save all participants with unique IDs

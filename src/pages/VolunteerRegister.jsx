@@ -94,27 +94,33 @@ const VolunteerRegister = () => {
     try {
       const volRef = collection(db, "volunteers");
       
-      // Query for the last volunteer ID with DGV prefix
-      const q = query(
-        volRef,
-        where("volunteerId", ">=", "DGV-000"),
-        where("volunteerId", "<", "DGV-999999"),
-        orderBy("volunteerId", "desc"),
-        limit(1)
-      );
-      const snap = await getDocs(q);
-
-      let lastNumber = 0;
-      snap.forEach((doc) => {
-        const lastId = doc.data()?.volunteerId;
-        if (lastId) {
-          const numberPart = lastId.split("-")[1];
-          lastNumber = parseInt(numberPart) || 0;
+      // Fetch ALL documents to find the highest DGV ID
+      const allDocsSnapshot = await getDocs(volRef);
+      
+      let maxNumber = 0;
+      const prefix = "DGV";
+      
+      allDocsSnapshot.forEach((docSnap) => {
+        const docId = docSnap.id;
+        const data = docSnap.data();
+        
+        // Check if document ID matches the pattern
+        if (docId.startsWith(prefix + "-")) {
+          const numberPart = docId.split("-")[1];
+          const num = parseInt(numberPart) || 0;
+          if (num > maxNumber) maxNumber = num;
+        }
+        
+        // Also check volunteerId field if it exists
+        if (data.volunteerId && data.volunteerId.startsWith(prefix + "-")) {
+          const numberPart = data.volunteerId.split("-")[1];
+          const num = parseInt(numberPart) || 0;
+          if (num > maxNumber) maxNumber = num;
         }
       });
 
       // Generate new unique ID with DGV prefix (DGV = Don Bosco Guwahati Volunteer)
-      const newNumber = lastNumber + 1;
+      const newNumber = maxNumber + 1;
       const volunteerId = `DGV-${String(newNumber).padStart(3, "0")}`;
       
       const dataToSave = { 
