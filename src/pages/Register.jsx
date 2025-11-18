@@ -241,26 +241,47 @@ const handleSubmit = async (e) => {
     createdAt: serverTimestamp(),
   };
 
-  // Sibling participants
+  // Sibling participants - calculate category based on each sibling's age
   const siblingParticipants =
     formData.hasSibling === "yes"
-      ? formData.siblings.map((sibling) => ({
-          ...sibling,
-          fatherName: formData.fatherName,
-          motherName: formData.motherName,
-          primaryContactNumber: formData.primaryContactNumber,
-          primaryContactRelation: formData.primaryContactRelation,
-          secondaryContactNumber: formData.secondaryContactNumber || "",
-          secondaryContactRelationship: formData.secondaryContactRelationship || "",
-          email: formData.email,
-          residence: formData.residence,
-          parentAgreement: formData.parentAgreement,
-          parentSignature: formData.parentSignature,
-          medicalConditions: formData.medicalConditions,
-          otherCondition: formData.otherCondition,
-          medicalNotes: formData.medicalNotes,
-          createdAt: serverTimestamp(),
-        }))
+      ? formData.siblings.map((sibling) => {
+          // Determine category and color based on sibling's age
+          let category = "";
+          let categoryColor = "";
+          const siblingAge = parseInt(sibling.age) || 0;
+
+          if (siblingAge >= 7 && siblingAge <= 12) {
+            category = "Kids";
+            categoryColor = "red";
+          } else if (siblingAge >= 13 && siblingAge <= 25) {
+            category = "Teen";
+            categoryColor = "blue";
+          }
+
+          return {
+            participantName: sibling.name,
+            age: sibling.age.toString(),
+            category: category,
+            categoryColor: categoryColor,
+            dob: "", // Sibling DOB not captured
+            fatherName: formData.fatherName,
+            motherName: formData.motherName,
+            contactFatherMobile: formData.contactFatherMobile,
+            contactMotherMobile: formData.contactMotherMobile,
+            primaryContactNumber: formData.primaryContactNumber,
+            primaryContactRelation: formData.primaryContactRelation,
+            secondaryContactNumber: formData.secondaryContactNumber || "",
+            secondaryContactRelationship: formData.secondaryContactRelationship || "",
+            email: formData.email,
+            residence: formData.residence,
+            parentAgreement: formData.parentAgreement,
+            parentSignature: formData.parentSignature,
+            medicalConditions: formData.medicalConditions,
+            otherCondition: formData.otherCondition,
+            medicalNotes: formData.medicalNotes,
+            createdAt: serverTimestamp(),
+          };
+        })
       : [];
 
   const allParticipants = [mainParticipant, ...siblingParticipants];
