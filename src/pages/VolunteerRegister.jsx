@@ -10,6 +10,7 @@ import {
   setDoc,
   doc,
   where,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import Logo2 from "../images/church logo2.png";
@@ -120,8 +121,29 @@ const VolunteerRegister = () => {
       });
 
       // Generate new unique ID with DGV prefix (DGV = Don Bosco Guwahati Volunteer)
-      const newNumber = maxNumber + 1;
-      const volunteerId = `DGV-${String(newNumber).padStart(3, "0")}`;
+      let newNumber = maxNumber + 1;
+      let volunteerId = `DGV-${String(newNumber).padStart(3, "0")}`;
+      
+      // Safety check: Ensure ID doesn't already exist (retry up to 20 times)
+      let attempts = 0;
+      while (attempts < 20) {
+        const docRef = doc(volRef, volunteerId);
+        const docSnap = await getDoc(docRef);
+        
+        if (!docSnap.exists()) {
+          // ID is available, we can use it
+          break;
+        } else {
+          // ID already exists, increment and try again
+          newNumber++;
+          volunteerId = `DGV-${String(newNumber).padStart(3, "0")}`;
+          attempts++;
+        }
+      }
+      
+      if (attempts >= 20) {
+        throw new Error("Could not generate unique volunteer ID after 20 attempts. Please contact support.");
+      }
       
       const dataToSave = { 
         ...formData, 

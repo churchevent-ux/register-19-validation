@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, addDoc, serverTimestamp, getDocs, query, where, orderBy, limit, setDoc, doc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, getDocs, query, where, orderBy, limit, setDoc, doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import Logo from "../images/church logo2.png";
 
@@ -349,7 +349,28 @@ const handleSubmit = async (e) => {
         prefix = "DGX";
       }
       
-      const uniqueId = `${prefix}-${String(categoryCounters[participant.category]).padStart(3, "0")}`;
+      let uniqueId = `${prefix}-${String(categoryCounters[participant.category]).padStart(3, "0")}`;
+      
+      // Safety check: Ensure ID doesn't already exist (retry up to 20 times)
+      let attempts = 0;
+      while (attempts < 20) {
+        const docRef = doc(usersRef, uniqueId);
+        const docSnap = await getDoc(docRef);
+        
+        if (!docSnap.exists()) {
+          // ID is available, we can use it
+          break;
+        } else {
+          // ID already exists, increment and try again
+          categoryCounters[participant.category]++;
+          uniqueId = `${prefix}-${String(categoryCounters[participant.category]).padStart(3, "0")}`;
+          attempts++;
+        }
+      }
+      
+      if (attempts >= 20) {
+        throw new Error(`Could not generate unique ID for ${participant.participantName} after 20 attempts. Please contact support.`);
+      }
       
       // Add uniqueId to participant data
       const participantWithId = {
