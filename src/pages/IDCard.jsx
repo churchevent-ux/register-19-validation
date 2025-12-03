@@ -6,6 +6,7 @@ import { db } from "../firebase";
 import { FaDownload, FaWhatsapp } from "react-icons/fa";
 import JsBarcode from "jsbarcode";
 import Logo from "../images/church logo2.png";
+import { sendRegistrationEmail, initEmailJS } from "../services/emailService";
 
 const IDCard = () => {
   const { state } = useLocation();
@@ -45,6 +46,11 @@ const IDCard = () => {
           .join(" ")
       : "";
 
+  // Initialize EmailJS on mount
+  useEffect(() => {
+    initEmailJS();
+  }, []);
+
   // Map participants & ensure category code
   useEffect(() => {
     if (!state?.formData) return navigate("/register");
@@ -60,6 +66,21 @@ const IDCard = () => {
     });
 
     setParticipants(allParticipants);
+    
+    // Send confirmation email after ID card is loaded
+    if (allParticipants.length > 0 && allParticipants[0].email) {
+      console.log("🔔 ID Card loaded, sending confirmation email...");
+      console.log("🔔 Email will be sent to:", allParticipants[0].email);
+      
+      sendRegistrationEmail(allParticipants[0])
+        .then((result) => {
+          console.log("✅ Confirmation email sent successfully!", result);
+        })
+        .catch((emailError) => {
+          console.error("❌ Failed to send confirmation email:", emailError);
+          console.error("❌ Email error details:", emailError.text || emailError.message);
+        });
+    }
   }, [state, navigate, getCategoryCode]);
 
   // Generate barcode for each participant

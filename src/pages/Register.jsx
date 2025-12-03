@@ -407,6 +407,7 @@ const handleSubmit = async (e) => {
     }
     
     console.log("All participants saved:", savedParticipants.length);
+    
     setLoading(false);
     navigate("/preview", { state: { participants: savedParticipants } });
   } catch (err) {
@@ -574,7 +575,7 @@ const handleSubmit = async (e) => {
 Secondary Contact (Optional)
     </label>
 
-    <div style={{ display: "flex", gap: 8 }}>
+    <div style={{ display: "flex", flexDirection: window.innerWidth > 768 ? "row" : "column", gap: 8 }}>
       {/* Relationship select */}
       <select
         value={formData.secondaryContactRelationship || ""}
@@ -582,7 +583,8 @@ Secondary Contact (Optional)
           setFormData({ ...formData, secondaryContactRelationship: e.target.value })
         }
         style={{
-          flex: 1,
+          flex: window.innerWidth > 768 ? 1 : "none",
+          width: window.innerWidth > 768 ? "auto" : "100%",
           padding: 10,
           borderRadius: 8,
           border: "1px solid #ddd",
@@ -599,7 +601,6 @@ Secondary Contact (Optional)
       {/* Phone number input */}
       <input
         type="tel"
-
         name="secondaryContactNumber"
         value={formData.secondaryContactNumber || ""}
         maxLength={13}
@@ -620,9 +621,10 @@ Secondary Contact (Optional)
             }
           }
         }}
- placeholder="Enter UAE number (e.g. +9715XXXXXXXX or 05XXXXXXXX)"
+        placeholder="Enter UAE number (e.g. +9715XXXXXXXX or 05XXXXXXXX)"
         style={{
-          flex: 1,
+          flex: window.innerWidth > 768 ? 1 : "none",
+          width: window.innerWidth > 768 ? "auto" : "100%",
           padding: 10,
           borderRadius: 8,
           border: "1px solid #ddd",

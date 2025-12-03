@@ -1,16 +1,36 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { QRCodeCanvas } from "qrcode.react";
 import { toPng } from "html-to-image";
 import Logo from "../images/bcst.jpeg";
 import Logo2 from "../images/logo.jpg";
 import Logo3 from "../images/logo2.png";
+import { sendRegistrationEmail, initEmailJS } from "../services/emailService";
 
 const VolunteerIDCard = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
   const cardRef = useRef();
   const buttonRef = useRef();
+
+  // Initialize EmailJS and send email on mount
+  useEffect(() => {
+    initEmailJS();
+    
+    if (state?.formData?.email) {
+      console.log("🔔 Volunteer ID Card loaded, sending confirmation email...");
+      console.log("🔔 Email will be sent to:", state.formData.email);
+      
+      sendRegistrationEmail(state.formData)
+        .then((result) => {
+          console.log("✅ Volunteer confirmation email sent successfully!", result);
+        })
+        .catch((emailError) => {
+          console.error("❌ Failed to send confirmation email:", emailError);
+          console.error("❌ Email error details:", emailError.text || emailError.message);
+        });
+    }
+  }, [state]);
 
   // If page opened directly without data, go back to register
   if (!state || !state.formData) {
