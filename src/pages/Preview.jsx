@@ -52,6 +52,7 @@ const Preview = () => {
       participantName: p.participantName || p.name || p.siblingName || "",
       dob: p.dob || "",
       age,
+      gender: p.gender || "",
       categoryLabel: label,
       categoryCode: code,
       category: p.category || label,
@@ -223,6 +224,19 @@ const Preview = () => {
                 onChange={(e) => handleChange(index, "email", e.target.value)}
               />
             </div>
+
+            <div style={styles.field}>
+  <label>Gender</label>
+  <select
+    style={styles.select}
+    value={p.gender}
+    onChange={(e) => handleChange(index, "gender", e.target.value)}
+  >
+    <option value="">Select</option>
+    <option value="Boy">Boy</option>
+    <option value="Girl">Girl</option>
+  </select>
+</div>
 
             <div style={styles.field}>
               <label>Medical Condition</label>

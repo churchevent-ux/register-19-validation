@@ -29,6 +29,7 @@ const fieldRefs = {
     age: "",
     category: "",
     categoryColor: "",
+    gender: "",  
     fatherName: "",
     motherName: "",
     contactHome: "",
@@ -196,6 +197,7 @@ const handleSubmit = async (e) => {
   const requiredFields = [
     "participantName",
     "dob",
+    "gender", 
     "primaryContactNumber",
     "email",
     "parentAgreement",
@@ -223,6 +225,7 @@ const handleSubmit = async (e) => {
     age: formData.age,
     category: formData.category,
     categoryColor: formData.categoryColor,
+    gender: formData.gender, 
     fatherName: formData.fatherName,
     motherName: formData.motherName,
     contactFatherMobile: formData.contactFatherMobile,
@@ -264,6 +267,7 @@ const handleSubmit = async (e) => {
             category: category,
             categoryColor: categoryColor,
             dob: "", // Sibling DOB not captured
+            gender: sibling.gender || "",
             fatherName: formData.fatherName,
             motherName: formData.motherName,
             contactFatherMobile: formData.contactFatherMobile,
@@ -460,6 +464,36 @@ const handleSubmit = async (e) => {
     backgroundColor: errorField === "dob" ? "#ffe6e6" : "white",
   }}
 />
+
+
+<Row>
+  <div style={{ flex: 1, minWidth: "250px", marginBottom: 10 }}>
+    <label style={{ fontWeight: 600, marginBottom: 6, display: "block", fontSize: 14 }}>
+      Gender *
+    </label>
+
+    <select
+      name="gender"
+      value={formData.gender}
+      onChange={handleChange}
+      required
+      style={{
+        width: "100%",
+        padding: 10,
+        borderRadius: 8,
+        border: errorField === "gender" ? "1px solid red" : "1px solid #ddd",
+        backgroundColor: errorField === "gender" ? "#ffe6e6" : "white",
+        fontSize: 14,
+      }}
+    >
+      <option value="">Select</option>
+      <option value="Boy">Boy</option>
+      <option value="Girl">Girl</option>
+    </select>
+  </div>
+</Row>
+
+
 {/* <Input
   ref={fieldRefs.contactFatherMobile}
   label="Father's Mobile *"
@@ -1330,7 +1364,7 @@ const ImportantNotes = () => (
        </li>
       <li>Age Category: Kids - 8 to 12 Years / Teens – 13 to 18 Years.</li>
       <li>
-      Drop-off at 8:30 AM and pick-up at 4:30 PM will be from the basketball court.
+      Drop-off at 8:30 AM and pick-up at 3:30 PM will be from the basketball court.
       </li>
       <li>Please carry your ID badge every day.</li>
       <li>
