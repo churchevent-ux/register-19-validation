@@ -1163,7 +1163,7 @@ const Header = () => (
     marginTop: 6,
     fontSize: 13,
     fontWeight: 600,
-    color: "#d9534f", // light red
+   color: "#666",// light red
     lineHeight: 1.4,
   }}
 >
