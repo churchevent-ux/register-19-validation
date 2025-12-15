@@ -1189,17 +1189,6 @@ const Header = () => (
 </div>
 
 
-<h3
-  style={{
-    fontSize: "17px",
-    color: "#e60000",
-    fontWeight: "800",
-    margin: "15px 0 5px",
-  }}
->
-  ⚠️ Lanyard Collection – Last Date: December 23, 2025
-</h3>
-
 
 
   <h3
@@ -1222,6 +1211,18 @@ const Header = () => (
   >
     P.O. BOX: 51200, Dubai, U.A.E
   </p>
+        
+<h3
+  style={{
+    fontSize: "17px",
+    color: "#e60000",
+    fontWeight: "800",
+    margin: "15px 0 5px",
+  }}
+>
+  ⚠️ Lanyard Collection – Last Date: December 23, 2025
+</h3>
+
 </div>
 
 
