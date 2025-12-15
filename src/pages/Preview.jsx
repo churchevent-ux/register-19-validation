@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp } from "firebase/firestore";
-import { db } from "../firebase";
 
 const MEDICAL_OPTIONS = ["N/A", "Asthma", "Diabetes", "Allergies", "Epilepsy", "Other"];
 
@@ -68,29 +66,12 @@ const Preview = () => {
 
   /** Load Participants **/
   useEffect(() => {
-    const initializeParticipants = async () => {
-      let initialParticipants = [];
-
-      if (state?.participants?.length) {
-        initialParticipants = state.participants.map(mapParticipantData);
-      } else {
-        setLoading(true);
-        try {
-          const usersRef = collection(db, "users");
-          const snap = await getDocs(usersRef);
-          initialParticipants = snap.docs.map((doc) => mapParticipantData(doc.data()));
-        } catch (err) {
-          console.error(err);
-          alert("❌ Failed to fetch participants: " + err.message);
-        } finally {
-          setLoading(false);
-        }
-      }
-
-      setParticipants(initialParticipants);
-    };
-
-    initializeParticipants();
+    if (!state?.participants?.length) {
+      alert("Session expired. Please re-submit the form.");
+      navigate("/");
+      return;
+    }
+    setParticipants(state.participants.map(mapParticipantData));
   }, [state, mapParticipantData]);
 
   /** Handlers **/

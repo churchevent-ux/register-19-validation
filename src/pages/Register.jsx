@@ -44,8 +44,7 @@ const fieldRefs = {
     medicalConditions: [],
     otherCondition: "",
     medicalNotes: "",
-    siblings: [], // ✅ NEW FIELD
-    hasSibling: "no",
+    // siblings and hasSibling removed
   });
   
 
@@ -71,7 +70,7 @@ const fieldRefs = {
   
       setFormData((prev) => ({
         ...prev,
-        age: ageNow.toString(),
+        age: ageNow !== undefined && ageNow !== null ? ageNow.toString() : "",
         category,
         categoryColor,
       }));
@@ -128,26 +127,7 @@ const formatFieldName = (field) => {
 
 
 
-  // Add a new sibling row
-const handleAddSibling = () => {
-  setFormData((prev) => ({
-    ...prev,
-    siblings: [...prev.siblings, { name: "", contact: "" }],
-  }));
-};
-
-// Update sibling details
-const handleSiblingChange = (index, field, value) => {
-  const updatedSiblings = [...formData.siblings];
-  updatedSiblings[index][field] = value;
-  setFormData({ ...formData, siblings: updatedSiblings });
-};
-
-// Remove a sibling
-const handleRemoveSibling = (index) => {
-  const updatedSiblings = formData.siblings.filter((_, i) => i !== index);
-  setFormData({ ...formData, siblings: updatedSiblings });
-};
+  // Sibling logic removed
 
 
 // Helper function to generate unique ID based on category
@@ -244,51 +224,8 @@ const handleSubmit = async (e) => {
     createdAt: serverTimestamp(),
   };
 
-  // Sibling participants - calculate category based on each sibling's age
-  const siblingParticipants =
-    formData.hasSibling === "yes"
-      ? formData.siblings.map((sibling) => {
-          // Determine category and color based on sibling's age
-          let category = "";
-          let categoryColor = "";
-          const siblingAge = parseInt(sibling.age) || 0;
-
-          if (siblingAge >= 7 && siblingAge <= 12) {
-            category = "Kids";
-            categoryColor = "red";
-          } else if (siblingAge >= 13 && siblingAge <= 25) {
-            category = "Teen";
-            categoryColor = "blue";
-          }
-
-          return {
-            participantName: sibling.name,
-            age: sibling.age.toString(),
-            category: category,
-            categoryColor: categoryColor,
-            dob: "", // Sibling DOB not captured
-            gender: sibling.gender || "",
-            fatherName: formData.fatherName,
-            motherName: formData.motherName,
-            contactFatherMobile: formData.contactFatherMobile,
-            contactMotherMobile: formData.contactMotherMobile,
-            primaryContactNumber: formData.primaryContactNumber,
-            primaryContactRelation: formData.primaryContactRelation,
-            secondaryContactNumber: formData.secondaryContactNumber || "",
-            secondaryContactRelationship: formData.secondaryContactRelationship || "",
-            email: formData.email,
-            residence: formData.residence,
-            parentAgreement: formData.parentAgreement,
-            parentSignature: formData.parentSignature,
-            medicalConditions: formData.medicalConditions,
-            otherCondition: formData.otherCondition,
-            medicalNotes: formData.medicalNotes,
-            createdAt: serverTimestamp(),
-          };
-        })
-      : [];
-
-  const allParticipants = [mainParticipant, ...siblingParticipants];
+  // Sibling logic removed
+  const allParticipants = [mainParticipant];
 
   try {
     const usersRef = collection(db, "users");
@@ -704,203 +641,6 @@ Secondary Contact (Optional)
 
 
 
-
-
-{/* ---------------- Sibling Attendance Section ---------------- */}
-{/* ---------------- Sibling Attendance Section ---------------- */}
-<Card title="👫 Sibling Information">
-  {/* Question */}
-  <div style={{ marginBottom: "15px" }}>
-    <label style={{ fontWeight: 600, fontSize: 15, marginBottom: 6, display: "block" }}>
-      Is your sibling attending this Teens & Kids Retreat?
-    </label>
-    <div style={{ display: "flex", gap: "20px", fontSize: 14 }}>
-      <label>
-        <input
-          type="radio"
-          name="hasSibling"
-          value="yes"
-          checked={formData.hasSibling === "yes"}
-          onChange={(e) =>
-            setFormData({ 
-              ...formData, 
-              hasSibling: e.target.value, 
-              siblings: [{ name: "", age: "" }], 
-              siblingSaved: false 
-            })
-          }
-          disabled={formData.siblingSaved} 
-        />{" "}
-        Yes
-      </label>
-      <label>
-        <input
-          type="radio"
-          name="hasSibling"
-          value="no"
-          checked={formData.hasSibling === "no"}
-          onChange={(e) =>
-            setFormData({ ...formData, hasSibling: e.target.value, siblings: [], siblingSaved: false })
-          }
-          disabled={formData.siblingSaved}
-        />{" "}
-        No
-      </label>
-    </div>
-  </div>
-
-  {/* Saved Sibling Summary */}
-  {formData.hasSibling === "yes" && formData.siblingSaved && (
-    <>
-      {formData.siblings.map((sibling, index) => (
-        <div
-          key={index}
-          style={{
-            background: "#f8f8f8",
-            padding: "12px 15px",
-            borderRadius: 10,
-            boxShadow: "0 3px 8px rgba(0,0,0,0.05)",
-            marginBottom: 10,
-            fontSize: 14,
-          }}
-        >
-          <strong>Sibling {index + 1}</strong>
-          <p style={{ margin: 4 }}>Full Name: {sibling.name}</p>
-          <p style={{ margin: 4 }}>Age: {sibling.age}</p>
-        </div>
-      ))}
-
-      <button
-        type="button"
-        onClick={() => setFormData({ ...formData, siblingSaved: false })}
-        style={{
-          ...styles.submitButton,
-          backgroundColor: "#f39c12",
-          marginTop: 5,
-          width: "fit-content",
-          padding: "10px 18px",
-        }}
-      >
-        ✏️ Edit Sibling Details
-      </button>
-    </>
-  )}
-
-  {/* Sibling Form */}
-  {formData.hasSibling === "yes" && !formData.siblingSaved && (
-    <>
-      {formData.siblings.map((sibling, index) => {
-        const isValid =
-          sibling.name.trim().length > 0 && sibling.age >= 8;
-
-        return (
-          <div
-            key={index}
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "12px",
-              marginBottom: "15px",
-              background: "#fff",
-              padding: "15px",
-              borderRadius: "12px",
-              border: "1px solid #ddd",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-            }}
-          >
-            {/* Name Input */}
-            <Input
-              label="Full Name"
-              value={sibling.name}
-              onChange={(e) => {
-                let val = e.target.value.replace(/[^a-zA-Z\s]/g, "");
-                val = val.replace(/\b\w/g, (char) => char.toUpperCase());
-                handleSiblingChange(index, "name", val);
-              }}
-              placeholder="Enter sibling's name"
-            />
-
-            {/* Age Input */}
-            <Input
-              label="Age"
-              type="number"
-              placeholder="Age between 8 and 18"
-              value={sibling.age}
-              onChange={(e) => {
-                let val = parseInt(e.target.value);
-                handleSiblingChange(index, "age", val);
-              }}
-            />
-
-            {/* Remove Button */}
-            <button
-              type="button"
-              onClick={() => handleRemoveSibling(index)}
-              style={{
-                background: "#ff4d4d",
-                color: "#fff",
-                border: "none",
-                borderRadius: "50%",
-                width: "28px",
-                height: "28px",
-                fontSize: "18px",
-                fontWeight: "bold",
-                lineHeight: "1",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginTop: "28px",
-              }}
-              title="Remove Sibling"
-            >
-              ×
-            </button>
-
-            {/* Add Another Sibling Button */}
-            {index === formData.siblings.length - 1 && isValid && (
-              <button
-                type="button"
-                onClick={handleAddSibling}
-                style={{
-                  ...styles.submitButton,
-                  backgroundColor: "#6c3483",
-                  width: "fit-content",
-                  padding: "10px 18px",
-                  marginBottom: 8,
-                  height: "40px",
-                  alignSelf: "flex-end",
-                }}
-              >
-                + Add Another Sibling
-              </button>
-            )}
-          </div>
-        );
-      })}
-
-      {/* Save Sibling Details Button */}
-      <button
-        type="button"
-        onClick={() => setFormData({ ...formData, siblingSaved: true })}
-        style={{
-          ...styles.submitButton,
-          backgroundColor: "#2ecc71",
-          width: "fit-content",
-          padding: "10px 18px",
-          marginTop: 5,
-          cursor: formData.siblings.every(s => s.name && s.age >= 8)
-            ? "pointer"
-            : "not-allowed",
-          opacity: formData.siblings.every(s => s.name && s.age >= 8) ? 1 : 0.6,
-        }}
-        disabled={!formData.siblings.every(s => s.name && s.age >= 8)}
-      >
-        ✅ Save Sibling Details
-      </button>
-    </>
-  )}
-</Card>
 
 
 

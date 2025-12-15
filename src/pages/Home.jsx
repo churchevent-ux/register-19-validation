@@ -78,6 +78,17 @@ const Home = () => {
   >
     (December 28th – 30th) - 3 Days
   </p>
+    <div
+    style={{
+      fontSize: 14,
+      fontWeight: 500,
+      color:"red",
+    }}
+  >
+    Kids <strong>8–12 Years</strong>
+    <span style={{ margin: "0 12px", opacity: 0.6 }}>|</span>
+    Teens <strong>13–18 Years</strong>
+  </div>
   <div
     style={{
       borderTop: "1px solid #e0d5f5",
@@ -104,6 +115,16 @@ const Home = () => {
   >
     P.O. BOX: 51200, Dubai, U.A.E
   </p>
+  <h2
+  style={{
+    fontSize: "17px",
+    color: "#e60000",
+    fontWeight: "800",
+    margin: "10px 0 0px",
+  }}
+>
+  ⚠️ Lanyard Collection – Last Date: December 23, 2025
+</h2>
 </div>
 
         {/* Buttons Section */}
