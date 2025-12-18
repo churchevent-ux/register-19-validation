@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { db } from "../firebase";
+import { collection, setDoc, getDocs, getDoc, doc, serverTimestamp } from "firebase/firestore";
 
 const MEDICAL_OPTIONS = ["N/A", "Asthma", "Diabetes", "Allergies", "Epilepsy", "Other"];
 
@@ -113,12 +115,12 @@ const Preview = () => {
 
       if (!p.primaryContactNumber) return `Participant ${i + 1}: Primary contact number is required`;
       if (!p.primaryContactRelation) return `Participant ${i + 1}: Primary contact relationship is required`;
-      if (!p.secondaryContactNumber) return `Participant ${i + 1}: Secondary contact number is required`;
-      if (!p.secondaryContactRelationship) return `Participant ${i + 1}: Secondary contact relationship is required`;
+      // Secondary contact is optional
     }
     return null;
   };
 
+  // --- FIREBASE LOGIC MOVED HERE ---
   const handleFinalSubmit = async () => {
     const error = validateParticipants();
     if (error) {
@@ -128,20 +130,108 @@ const Preview = () => {
 
     setLoading(true);
     try {
-      // Data is already saved in Register.jsx with uniqueId
-      // Each participant is saved individually with their own unique ID
-      const savedDocs = participants.map(p => ({
-        ...p,
-        studentId: p.uniqueId || p.studentId, // Use uniqueId as studentId for display
-        docId: p.uniqueId || p.id
-      }));
+      // Save each participant to Firebase with unique ID generation
+      const usersRef = collection(db, "users");
 
+      const savedDocs = [];
+      for (const participant of participants) {
+        let prefix = "";
+        if (participant.category === "Kids") {
+          prefix = "DGK";
+        } else if (participant.category === "Teen") {
+          prefix = "DGT";
+        } else {
+          prefix = "DGX";
+        }
+
+        let uniqueId = null;
+        let attempts = 0;
+        const maxAttempts = 50;
+        while (attempts < maxAttempts && !uniqueId) {
+          const allDocsSnapshot = await getDocs(usersRef);
+          let maxNumber = 0;
+          const usedIds = new Set();
+          allDocsSnapshot.forEach((docSnap) => {
+            const docId = docSnap.id;
+            const data = docSnap.data();
+            if (docId.startsWith(prefix + "-")) {
+              usedIds.add(docId);
+              const numberPart = docId.split("-")[1];
+              const num = parseInt(numberPart) || 0;
+              if (num > maxNumber) maxNumber = num;
+            }
+            if (data.uniqueId && data.uniqueId.startsWith(prefix + "-")) {
+              usedIds.add(data.uniqueId);
+              const numberPart = data.uniqueId.split("-")[1];
+              const num = parseInt(numberPart) || 0;
+              if (num > maxNumber) maxNumber = num;
+            }
+            if (data.studentId && data.studentId.startsWith(prefix + "-")) {
+              usedIds.add(data.studentId);
+              const numberPart = data.studentId.split("-")[1];
+              const num = parseInt(numberPart) || 0;
+              if (num > maxNumber) maxNumber = num;
+            }
+            if (data.familyId && data.familyId.startsWith(prefix + "-")) {
+              usedIds.add(data.familyId);
+              const numberPart = data.familyId.split("-")[1];
+              const num = parseInt(numberPart) || 0;
+              if (num > maxNumber) maxNumber = num;
+            }
+          });
+          const nextNumber = maxNumber + 1 + attempts;
+          const candidateId = `${prefix}-${String(nextNumber).padStart(3, "0")}`;
+          if (usedIds.has(candidateId)) {
+            attempts++;
+            await new Promise(resolve => setTimeout(resolve, 50 * (attempts + 1)));
+            continue;
+          }
+          const docRef = doc(usersRef, candidateId);
+          const docSnap = await getDoc(docRef);
+          if (!docSnap.exists()) {
+            uniqueId = candidateId;
+            // Format display timestamp as dd/MM/yyyy, HH:mm:ss
+            const now = new Date();
+            const dd = String(now.getDate()).padStart(2, "0");
+            const mm = String(now.getMonth() + 1).padStart(2, "0");
+            const yyyy = now.getFullYear();
+            const hh = String(now.getHours()).padStart(2, "0");
+            const min = String(now.getMinutes()).padStart(2, "0");
+            const ss = String(now.getSeconds()).padStart(2, "0");
+            const registrationAtDisplay = `${dd}/${mm}/${yyyy}, ${hh}:${min}:${ss}`;
+            const participantWithId = {
+              ...participant,
+              uniqueId: uniqueId,
+              registrationTimestamp: serverTimestamp(),
+              registrationDevice: navigator.userAgent,
+              registrationAtDisplay,
+              // Ensure createdAt is a proper server timestamp (overrides any serialized placeholder)
+              createdAt: serverTimestamp(),
+            };
+            try {
+              await setDoc(docRef, participantWithId);
+              savedDocs.push({ ...participantWithId, studentId: uniqueId, docId: uniqueId });
+              await new Promise(resolve => setTimeout(resolve, 100));
+              break;
+            } catch (saveError) {
+              throw saveError;
+            }
+          }
+          attempts++;
+          await new Promise(resolve => setTimeout(resolve, 50 * (attempts + 1)));
+        }
+        if (!uniqueId) {
+          throw new Error(
+            `Failed to generate unique ID for ${participant.participantName} after ${maxAttempts} attempts. ` +
+            `This might be due to high registration traffic. Please try again in a moment.`
+          );
+        }
+      }
+      setLoading(false);
       navigate("/id-card", { state: { formData: savedDocs[0], siblings: savedDocs.slice(1) } });
     } catch (err) {
-      console.error(err);
-      alert(`❌ Navigation failed: ${err.message}`);
-    } finally {
       setLoading(false);
+      alert(`❌ Registration failed: ${err.message}`);
     }
   };
 
@@ -251,7 +341,16 @@ const Preview = () => {
       </div>
 
       <div style={styles.buttonGroup}>
-        <button style={styles.backBtn} onClick={() => navigate(-1)} disabled={loading}>
+        <button
+          style={styles.backBtn}
+          onClick={() => {
+            // Pass current participant data back to Register for restoration
+            navigate("/register", {
+              state: { restoreFormData: participants[0] }
+            });
+          }}
+          disabled={loading}
+        >
           ← Back
         </button>
         <button

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toPng } from "html-to-image";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import { FaDownload, FaWhatsapp } from "react-icons/fa";
 import JsBarcode from "jsbarcode";
@@ -93,10 +93,20 @@ const IDCard = () => {
       for (let p of participants) {
         if (p.docId) {
           const ref = doc(db, "users", p.docId);
+          // Format display timestamp as dd/MM/yyyy, HH:mm:ss
+          const now = new Date();
+          const dd = String(now.getDate()).padStart(2, "0");
+          const mm = String(now.getMonth() + 1).padStart(2, "0");
+          const yyyy = now.getFullYear();
+          const hh = String(now.getHours()).padStart(2, "0");
+          const min = String(now.getMinutes()).padStart(2, "0");
+          const ss = String(now.getSeconds()).padStart(2, "0");
+          const idGeneratedAtDisplay = `${dd}/${mm}/${yyyy}, ${hh}:${min}:${ss}`;
           await updateDoc(ref, {
             idGenerated: true,
             generatedId: p.displayId,
-            generatedAt: new Date(),
+            idGeneratedAt: serverTimestamp(),
+            idGeneratedAtDisplay,
           });
         }
       }

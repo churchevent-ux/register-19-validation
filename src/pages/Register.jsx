@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { collection, addDoc, serverTimestamp, getDocs, query, where, orderBy, limit, setDoc, doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import Logo from "../images/church logo2.png";
@@ -23,7 +23,9 @@ const fieldRefs = {
 
 };
 
-  const [formData, setFormData] = useState({
+  // Allow restoring form data from navigation state
+  const { state } = useLocation();
+  const defaultFormData = {
     participantName: "",
     dob: "",
     age: "",
@@ -45,6 +47,13 @@ const fieldRefs = {
     otherCondition: "",
     medicalNotes: "",
     // siblings and hasSibling removed
+  };
+  const [formData, setFormData] = useState(() => {
+    // If coming back from Preview, restore formData
+    if (state && state.restoreFormData) {
+      return { ...defaultFormData, ...state.restoreFormData };
+    }
+    return defaultFormData;
   });
   
 
@@ -198,7 +207,7 @@ const handleSubmit = async (e) => {
   setErrorField(null);
   setLoading(true);
 
-  // Prepare main participant
+  // Prepare main participant (no ID generation or Firebase save here)
   const mainParticipant = {
     participantName: formData.participantName,
     dob: formData.dob,
@@ -221,141 +230,13 @@ const handleSubmit = async (e) => {
     medicalConditions: formData.medicalConditions,
     otherCondition: formData.otherCondition,
     medicalNotes: formData.medicalNotes,
-    createdAt: serverTimestamp(),
   };
 
   // Sibling logic removed
   const allParticipants = [mainParticipant];
 
-  try {
-    const usersRef = collection(db, "users");
-    const savedParticipants = [];
-    
-    // Process each participant individually with full collision detection
-    for (const participant of allParticipants) {
-      let prefix = "";
-      if (participant.category === "Kids") {
-        prefix = "DGK";
-      } else if (participant.category === "Teen") {
-        prefix = "DGT";
-      } else {
-        prefix = "DGX";
-      }
-      
-      let uniqueId = null;
-      let attempts = 0;
-      const maxAttempts = 50; // Increased for high concurrency
-      
-      // Keep trying until we find an available ID
-      while (attempts < maxAttempts && !uniqueId) {
-        // Fetch ALL documents each time to get the absolute latest state
-        const allDocsSnapshot = await getDocs(usersRef);
-        let maxNumber = 0;
-        
-        // Find the highest number for this prefix - check ALL possible ID fields
-        const usedIds = new Set();
-        allDocsSnapshot.forEach((docSnap) => {
-          const docId = docSnap.id;
-          const data = docSnap.data();
-          
-          // Check document ID
-          if (docId.startsWith(prefix + "-")) {
-            usedIds.add(docId);
-            const numberPart = docId.split("-")[1];
-            const num = parseInt(numberPart) || 0;
-            if (num > maxNumber) maxNumber = num;
-          }
-          
-          // Check uniqueId field
-          if (data.uniqueId && data.uniqueId.startsWith(prefix + "-")) {
-            usedIds.add(data.uniqueId);
-            const numberPart = data.uniqueId.split("-")[1];
-            const num = parseInt(numberPart) || 0;
-            if (num > maxNumber) maxNumber = num;
-          }
-          
-          // Check studentId field (legacy)
-          if (data.studentId && data.studentId.startsWith(prefix + "-")) {
-            usedIds.add(data.studentId);
-            const numberPart = data.studentId.split("-")[1];
-            const num = parseInt(numberPart) || 0;
-            if (num > maxNumber) maxNumber = num;
-          }
-          
-          // Check familyId field (legacy)
-          if (data.familyId && data.familyId.startsWith(prefix + "-")) {
-            usedIds.add(data.familyId);
-            const numberPart = data.familyId.split("-")[1];
-            const num = parseInt(numberPart) || 0;
-            if (num > maxNumber) maxNumber = num;
-          }
-        });
-        
-        // Try the next available number
-        const nextNumber = maxNumber + 1 + attempts; // Add attempts to avoid collisions
-        const candidateId = `${prefix}-${String(nextNumber).padStart(3, "0")}`;
-        
-        // Check if this ID is already in use in the Set
-        if (usedIds.has(candidateId)) {
-          attempts++;
-          await new Promise(resolve => setTimeout(resolve, 50 * (attempts + 1)));
-          continue;
-        }
-        
-        // Double check this ID doesn't exist as document ID
-        const docRef = doc(usersRef, candidateId);
-        const docSnap = await getDoc(docRef);
-        
-        if (!docSnap.exists()) {
-          // SUCCESS! This ID is available
-          uniqueId = candidateId;
-          
-          // Immediately save to claim this ID
-          const participantWithId = {
-            ...participant,
-            uniqueId: uniqueId,
-            registrationTimestamp: serverTimestamp(),
-            registrationDevice: navigator.userAgent,
-          };
-          
-          console.log("Saving participant with ID:", uniqueId, participantWithId);
-          
-          try {
-            await setDoc(docRef, participantWithId);
-            console.log("Successfully saved:", uniqueId);
-            savedParticipants.push(participantWithId);
-            
-            // Add small delay to ensure write is committed
-            await new Promise(resolve => setTimeout(resolve, 100));
-            break;
-          } catch (saveError) {
-            console.error("Error saving participant:", saveError);
-            throw saveError;
-          }
-        }
-        
-        attempts++;
-        // Add exponential backoff for retries
-        await new Promise(resolve => setTimeout(resolve, 50 * (attempts + 1)));
-      }
-      
-      if (!uniqueId) {
-        throw new Error(
-          `Failed to generate unique ID for ${participant.participantName} after ${maxAttempts} attempts. ` +
-          `This might be due to high registration traffic. Please try again in a moment.`
-        );
-      }
-    }
-    
-    console.log("All participants saved:", savedParticipants.length);
-    
-    setLoading(false);
-    navigate("/preview", { state: { participants: savedParticipants } });
-  } catch (err) {
-    console.error("Registration error:", err);
-    setLoading(false);
-    alert("Failed to save registration: " + err.message);
-  }
+  setLoading(false);
+  navigate("/preview", { state: { participants: allParticipants } });
 };
 
 
