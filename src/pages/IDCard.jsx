@@ -185,7 +185,7 @@ const IDCard = () => {
   <span style={{ color: "#6c3483", fontWeight: "bold" }}>Final Batch</span>
   <ul style={{ margin: "0.5em 0 0 1em" }}>
     <li>
-      Saturday, December 23, 2025: 9:30 AM – 1:30 PM & 4:00 PM – 7:30 PM
+      December 23, 2025: 9:30 AM – 1:30 PM & 4:00 PM – 7:30 PM
     </li>
     <li
       style={{
