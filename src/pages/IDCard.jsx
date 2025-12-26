@@ -205,7 +205,7 @@ const IDCard = () => {
         display: "inline-block"
       }}
     >
-     Last date to collect the lanyard: December 23, 2025
+     Last date to collect the lanyard: December 27, 2025
     </li>
   </ul>
 </div>
