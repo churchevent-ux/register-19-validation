@@ -841,7 +841,7 @@ const Header = () => (
     margin: "15px 0 5px",
   }}
 >
-  ⚠️ Lanyard Collection – Last Date: December 23, 2025
+  ⚠️ Lanyard Collection – Last Date: December 27, 2025
 </h3>
 
 </div>
