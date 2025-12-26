@@ -123,7 +123,7 @@ const Home = () => {
     margin: "10px 0 0px",
   }}
 >
-  ⚠️ Lanyard Collection – Last Date: December 23, 2025
+  ⚠️ Lanyard Collection – Last Date: December 27, 2025
 </h2>
 </div>
 
